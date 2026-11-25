@@ -32,6 +32,7 @@ jobs:
           base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i '/fun bookingsFor(/s/else it.hour})$/else it.hour}}/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i '/fun fixedBookings(/s/else it.hour}}$/else it.hour})/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          perl -0pi -e 's/private fun confirmFixedOverride\\(h:Int\\)\\{.*?\\n \\}/private fun confirmFixedOverride(h:Int){bookingDialog(null,h)}/s' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           cp -a project/. .
       - name: Upload Extracted Project Source
