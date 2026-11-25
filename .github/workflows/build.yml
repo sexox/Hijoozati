@@ -30,7 +30,8 @@ jobs:
           test -f project/settings.gradle.kts
           mkdir -p project/app/src/main/java/com/hijoozati/app
           base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i 's/else it.hour}}$/else it.hour})/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          sed -i '/fun bookingsFor(/s/else it.hour})$/else it.hour}}/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          sed -i '/fun fixedBookings(/s/else it.hour}}$/else it.hour})/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           cp -a project/. .
       - name: Upload Extracted Project Source
