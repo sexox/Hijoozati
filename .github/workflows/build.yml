@@ -34,6 +34,54 @@ jobs:
           mkdir -p project/app/src/main/java/com/hijoozati/app
           base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("project/app/src/main/java/com/hijoozati/app/MainActivity.kt")
+          s = p.read_text(encoding="utf-8")
+          old = "val tx=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;addView(label(t,17f,C.white,true).apply{gravity=Gravity.RIGHT});addView(label(s,11f,C.muted).apply{gravity=Gravity.RIGHT})}"
+          new = "val tx=LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;addView(label(t,17f,C.white,true).apply{gravity=Gravity.RIGHT});addView(label(s,11f,C.muted).apply{gravity=Gravity.RIGHT})}"
+          assert s.count(old) == 1, "Expected nested LinearLayout expression not found exactly once"
+          s = s.replace(old, new, 1)
+          old_fn = '    private fun tournamentDialog(){val f=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),0,dp(16),0)};fun e(h:String):EditText=EditText(this).apply{hint=h;setTextColor(C.white);setHintTextColor(C.muted);background=shape(12);setPadding(dp(10),dp(6),dp(10),dp(6))}.also{f.addView(it,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(6)})};val name=e("اسم البطولة");val start=e("تاريخ البداية (اختياري)");val end=e("تاريخ النهاية (اختياري)");AlertDialog.Builder(this).setTitle("بطولة جديدة").setView(f).setPositiveButton("إنشاء"){_,_->if(name.text.toString().isNotBlank()){db.addTournament(name.text.toString().trim(),start.text.toString().trim(),end.text.toString().trim());showApp()}else Toast.makeText(this,"اكتب اسم البطولة",Toast.LENGTH_SHORT).show()}.setNegativeButton("إلغاء",null).show()}'
+          new_fn = """    private fun tournamentDialog() {
+              val f = LinearLayout(this).apply {
+                  orientation = LinearLayout.VERTICAL
+                  setPadding(dp(16), 0, dp(16), 0)
+              }
+              fun e(h: String): EditText {
+                  val field = EditText(this@MainActivity).apply {
+                      hint = h
+                      setTextColor(C.white)
+                      setHintTextColor(C.muted)
+                      background = shape(12)
+                      setPadding(dp(10), dp(6), dp(10), dp(6))
+                  }
+                  f.addView(field, LinearLayout.LayoutParams(-1, dp(48)).apply {
+                      topMargin = dp(6)
+                  })
+                  return field
+              }
+              val name = e("اسم البطولة")
+              val start = e("تاريخ البداية (اختياري)")
+              val end = e("تاريخ النهاية (اختياري)")
+              AlertDialog.Builder(this)
+                  .setTitle("بطولة جديدة")
+                  .setView(f)
+                  .setPositiveButton("إنشاء") { _, _ ->
+                      if (name.text.toString().isNotBlank()) {
+                          db.addTournament(name.text.toString().trim(), start.text.toString().trim(), end.text.toString().trim())
+                          showApp()
+                      } else {
+                          Toast.makeText(this, "اكتب اسم البطولة", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+                  .setNegativeButton("إلغاء", null)
+                  .show()
+          }"""
+          assert s.count(old_fn) == 1, "Expected tournamentDialog function not found exactly once"
+          s = s.replace(old_fn, new_fn, 1)
+          p.write_text(s, encoding="utf-8")
+          PY
           cp -a project/. .
 
       - name: Upload Extracted Project Source
