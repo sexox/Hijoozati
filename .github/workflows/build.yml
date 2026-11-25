@@ -1,4 +1,3 @@
-
 name: Build Hijoozati APK
 
 on:
@@ -6,6 +5,7 @@ on:
   push:
     paths:
       - 'Hijoozati_Project.zip'
+      - 'maintenance/**'
       - '.github/workflows/build.yml'
 
 permissions:
@@ -31,6 +31,9 @@ jobs:
           mkdir project
           unzip -q Hijoozati_Project.zip -d project
           test -f project/settings.gradle.kts
+          mkdir -p project/app/src/main/java/com/hijoozati/app
+          base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           cp -a project/. .
 
       - name: Upload Extracted Project Source
