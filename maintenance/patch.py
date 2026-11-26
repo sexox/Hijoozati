@@ -1,5 +1,7 @@
 p='project/app/src/main/java/com/hijoozati/app/MainActivity.kt'
 s=open(p,encoding='utf-8').read()
+# ScrollView inherits FrameLayout; use the public ViewGroup.LayoutParams type.
+s=s.replace('ScrollView.LayoutParams(-1,-2)','android.view.ViewGroup.LayoutParams(-1,-2)')
 # Restore a full-width, naturally sized screen with comfortable internal spacing.
 old=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(dp(11),dp(5),dp(11),dp(5))};val sc=ScrollView(this).apply{isFillViewport=true};content=LinearLayout(this).apply{orientation=1};sc.addView(content);root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
 new=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(0,0,0,0)};val sc=ScrollView(this).apply{isFillViewport=true;clipToPadding=false};content=LinearLayout(this).apply{orientation=1;setPadding(dp(14),dp(8),dp(14),dp(8))};sc.addView(content,ScrollView.LayoutParams(-1,-2));root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
