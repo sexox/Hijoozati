@@ -32,20 +32,17 @@ jobs:
           base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i '/fun bookingsFor(/s/else it.hour})$/else it.hour}}/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i '/fun fixedBookings(/s/else it.hour}}$/else it.hour})/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i 's/val hours=(15..23).toList()+listOf(0)/val hours=(15..23).toList()/g' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           python3 - <<'PY'
           p='project/app/src/main/java/com/hijoozati/app/MainActivity.kt'
           s=open(p,encoding='utf-8').read()
-          marker=' }\n private fun bookingPage(){'
-          replacement='  gap(12);content.addView(txt("حجوزاتي • الإصدار 1.2.0",10f,Palette.muted).apply{gravity=Gravity.CENTER})\n }\n private fun bookingPage(){'
-          if 'حجوزاتي • الإصدار 1.2.0' not in s:
-              assert marker in s
-              s=s.replace(marker,replacement,1)
+          old=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(dp(11),dp(5),dp(11),dp(5))};val sc=ScrollView(this).apply{isFillViewport=true};content=LinearLayout(this).apply{orientation=1};sc.addView(content);root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
+          new=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(0,0,0,0)};val sc=ScrollView(this).apply{isFillViewport=true;clipToPadding=false};content=LinearLayout(this).apply{orientation=1;setPadding(dp(14),dp(8),dp(14),dp(8))};sc.addView(content,ScrollView.LayoutParams(-1,-2));root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
+          assert old in s, 'showApp layout signature not found'
+          s=s.replace(old,new,1)
           open(p,'w',encoding='utf-8').write(s)
           PY
-          grep -q 'حجوزاتي • الإصدار 1.2.0' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          ! grep -q 'val hours=(15..23).toList()+listOf(0)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'setPadding(dp(14),dp(8),dp(14),dp(8))' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i 's/versionCode = 1/versionCode = 3/; s/versionName = "1.0"/versionName = "1.2.0"/' project/app/build.gradle.kts
           cp -a project/. .
       - name: Upload Extracted Project Source
