@@ -63,6 +63,23 @@ jobs:
           old='db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
           new='db.writableDatabase.delete("bookings","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
           if old in s: s=s.replace(old,new,1)
+          # Display complete one-hour ranges consistently throughout the app.
+          replacements={
+           'hour(b.hour)}  •  ${if(b.recurring)':'hourRange(b.hour)}  •  ${if(b.recurring)',
+           '${days[b.weekday]} • ${hour(b.hour)}':'${days[b.weekday]} • ${hourRange(b.hour)}',
+           '${dateLabel(b.date)}\\n${hour(b.hour)}\\nالمدة: ساعة واحدة':'${dateLabel(b.date)}\\n${hourRange(b.hour)}\\nالمدة: ساعة واحدة',
+           '${dateLabel(it.date)} ${hour(it.hour)}':'${dateLabel(it.date)} ${hourRange(it.hour)}'
+          }
+          for old,new in replacements.items():
+           if old in s: s=s.replace(old,new)
+          # Keep tournament-linked booking rows in sync if an individual match booking is deleted.
+          old='fun deleteBooking(id:Long){writableDatabase.delete("bookings","id=?",arrayOf(id.toString()))}'
+          new='fun deleteBooking(id:Long){writableDatabase.delete("bookings","id=?",arrayOf(id.toString()));writableDatabase.update("fixtures",ContentValues().apply{put("booking_id",0);put("match_date","")},"booking_id=?",arrayOf(id.toString()))}'
+          if old in s: s=s.replace(old,new,1)
+          # Ensure the dedicated tournament booking view only lists live linked bookings.
+          old='val fs=db.fixtures(id).filter{it.bookingId>0}'
+          new='val fs=db.fixtures(id).filter{it.bookingId>0&&db.allBookings().any{b->b.id==it.bookingId}}'
+          if old in s: s=s.replace(old,new,1)
           # Expose the monthly calendar from the bookings page.
           old='  gap(10);weekPicker();gap(8)'
           new='  gap(10);weekPicker();content.addView(btn("عرض التقويم الشهري",{monthPicker()},false),LinearLayout.LayoutParams(-1,dp(40)).apply{topMargin=dp(6)});gap(8)'
@@ -133,7 +150,7 @@ jobs:
           grep -q 'showTournamentBookings(id:Long)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           grep -q 'hourRange(h:Int)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           grep -q 'setPadding(dp(14),dp(8),dp(14),dp(8))' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i 's/versionCode = [0-9][0-9]*/versionCode = 5/; s/versionName = "[^"]*"/versionName = "1.4.0"/' project/app/build.gradle.kts
+          sed -i 's/versionCode = [0-9][0-9]*/versionCode = 6/; s/versionName = "[^"]*"/versionName = "1.5.0"/' project/app/build.gradle.kts
           cp -a project/. .
       - name: Upload Extracted Project Source
         uses: actions/upload-artifact@v4
