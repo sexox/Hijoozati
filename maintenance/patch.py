@@ -26,10 +26,8 @@ print('Source validation passed')
 
 # Apply the approved button and navigation polish without replacing existing screens.
 text = source.read_text(encoding='utf-8')
-text = text.replace(
-    'import android.graphics.drawable.GradientDrawable\\n',
-    'import android.graphics.drawable.GradientDrawable\\nimport android.graphics.drawable.RippleDrawable\\nimport android.content.res.ColorStateList\\n'
-)
+needle = 'import android.graphics.drawable.GradientDrawable'
+text = text.replace(needle, needle + chr(10) + 'import android.graphics.drawable.RippleDrawable' + chr(10) + 'import android.content.res.ColorStateList')
 old_btn = ' private fun btn(s:String,action:()->Unit,accent:Boolean=false)=txt(s,14f,Palette.white,true).apply{minHeight=dp(44);minimumHeight=dp(44);background=panel(14,accent);setOnClickListener{action()}}'
 new_btn = ''' private fun btn(s:String,action:()->Unit,accent:Boolean=false)=txt(s,14f,Palette.white,true).apply{
   minHeight=dp(48);minimumHeight=dp(48);minWidth=dp(64)
