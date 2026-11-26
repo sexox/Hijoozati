@@ -1,1 +1,1 @@
-Trigger final Hijoozati 1.2.0 build after correcting source patch placement.
+Rebuild Hijoozati 1.2.0 with only restored full-width/default screen sizing.
