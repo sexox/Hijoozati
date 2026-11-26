@@ -63,6 +63,35 @@ jobs:
           old='db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
           new='db.writableDatabase.delete("bookings","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
           if old in s: s=s.replace(old,new,1)
+          # Expose the monthly calendar from the bookings page.
+          old='  gap(10);weekPicker();gap(8)'
+          new='  gap(10);weekPicker();content.addView(btn("عرض التقويم الشهري",{monthPicker()},false),LinearLayout.LayoutParams(-1,dp(40)).apply{topMargin=dp(6)});gap(8)'
+          if old in s: s=s.replace(old,new,1)
+          # Give each tournament a dedicated list of its scheduled match bookings.
+          old='val opts=arrayOf("إضافة فريق مشارك","سحب القرعة وإنشاء المباريات","النتائج وجدول المباريات","إحصائيات البطولة","حذف البطولة");'
+          new='val opts=arrayOf("إضافة فريق مشارك","سحب القرعة وإنشاء المباريات","النتائج وجدول المباريات","إحصائيات البطولة","حجوزات البطولة","حذف البطولة");'
+          if old in s: s=s.replace(old,new,1)
+          old='3->showTournamentStats(id);4->AlertDialog.Builder(this).setMessage("حذف البطولة؟")'
+          new='3->showTournamentStats(id);4->showTournamentBookings(id);5->AlertDialog.Builder(this).setMessage("حذف البطولة؟")'
+          if old in s: s=s.replace(old,new,1)
+          # Implement a separate tournament booking list, linked back to match actions.
+          anchor=' private fun showTournamentStats(id:Long){'
+          method=''' private fun showTournamentBookings(id:Long){
+          val fs=db.fixtures(id).filter{it.bookingId>0}
+          if(fs.isEmpty()){Toast.makeText(this,"لا توجد حجوزات مباريات لهذه البطولة",Toast.LENGTH_LONG).show();return}
+          val lines=fs.map{"${it.home} × ${it.away} • ${dateLabel(it.date)} • ${hourRange(it.hour)}"}
+          AlertDialog.Builder(this).setTitle("حجوزات البطولة").setItems(lines.toTypedArray()){_,i->fixtureOptions(fs[i])}.setNegativeButton("رجوع",null).show()
+         }
+         '''
+          if 'private fun showTournamentBookings(id:Long)' not in s:
+              assert anchor in s, 'tournament stats anchor missing'
+              s=s.replace(anchor,method+anchor,1)
+          # Generate a full round-robin group stage for the groups tournament type.
+          old='}else{val pool=teams.map{it.name}.toMutableList();if(pool.size%2==1)pool.add("تأهل تلقائي");for(i in 0 until pool.size/2){if(pool[i]!="تأهل تلقائي"&&pool[pool.lastIndex-i]!="تأهل تلقائي")db.addFixture(id,pool[i],pool[pool.lastIndex-i],"الدور الأول")}};showFixtures(id)}'
+          new='}else if(t.type=="مجموعات ثم خروج المغلوب"){for(i in teams.indices)for(j in i+1 until teams.size)db.addFixture(id,teams[i].name,teams[j].name,"دور المجموعات")}else{val pool=teams.map{it.name}.toMutableList();if(pool.size%2==1)pool.add("تأهل تلقائي");for(i in 0 until pool.size/2){if(pool[i]!="تأهل تلقائي"&&pool[pool.lastIndex-i]!="تأهل تلقائي")db.addFixture(id,pool[i],pool[pool.lastIndex-i],"الدور الأول")}};showFixtures(id)}'
+          if old in s: s=s.replace(old,new,1)
+          assert 'private fun showTournamentBookings(id:Long)' in s
+          assert 'عرض التقويم الشهري' in s
           # Calculate a real league table from recorded scores instead of showing only a score list.
           start=s.find(' private fun showTournamentStats(id:Long)')
           end=s.find('\n private fun playersPage()',start)
@@ -90,7 +119,7 @@ jobs:
           grep -q 'ترتيب البطولة' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           grep -q 'bookings","tournament_id' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           grep -q 'setPadding(dp(14),dp(8),dp(14),dp(8))' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i 's/versionCode = 1/versionCode = 4/; s/versionName = "1.0"/versionName = "1.3.0"/' project/app/build.gradle.kts
+          sed -i 's/versionCode = 1/versionCode = 5/; s/versionName = "1.0"/versionName = "1.4.0"/' project/app/build.gradle.kts
           cp -a project/. .
       - name: Upload Extracted Project Source
         uses: actions/upload-artifact@v4
