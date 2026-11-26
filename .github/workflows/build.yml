@@ -42,6 +42,53 @@ jobs:
           s=s.replace(old,new,1)
           open(p,'w',encoding='utf-8').write(s)
           PY
+          python3 - <<'PY'
+          p='project/app/src/main/java/com/hijoozati/app/MainActivity.kt'
+          s=open(p,encoding='utf-8').read()
+          # Restore a full-width, naturally sized screen with comfortable internal spacing.
+          old=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(dp(11),dp(5),dp(11),dp(5))};val sc=ScrollView(this).apply{isFillViewport=true};content=LinearLayout(this).apply{orientation=1};sc.addView(content);root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
+          new=' private fun showApp(){root=LinearLayout(this).apply{orientation=1;layoutDirection=View.LAYOUT_DIRECTION_RTL;setBackgroundColor(Palette.bg);setPadding(0,0,0,0)};val sc=ScrollView(this).apply{isFillViewport=true;clipToPadding=false};content=LinearLayout(this).apply{orientation=1;setPadding(dp(14),dp(8),dp(14),dp(8))};sc.addView(content,ScrollView.LayoutParams(-1,-2));root.addView(sc,LinearLayout.LayoutParams(-1,0,1f));'
+          if old in s: s=s.replace(old,new,1)
+          assert 'setPadding(dp(14),dp(8),dp(14),dp(8))' in s
+          # Show the complete one-hour booking range, including the next-hour end time.
+          old=' private fun hour(h:Int)="${if(h%12==0)12 else h%12}:00 ${if(h<12)"ص" else "م"}"'
+          new=old+'\n private fun hourRange(h:Int)="${hour(h)} – ${hour((h+1)%24)}"'
+          if 'private fun hourRange(h:Int)' not in s:
+              assert old in s, 'hour formatter not found'
+              s=s.replace(old,new,1)
+          old='line.addView(txt(hour(h),15f,Palette.white,true),LinearLayout.LayoutParams(dp(91),dp(43)))'
+          new='line.addView(txt(hourRange(h),14f,Palette.white,true),LinearLayout.LayoutParams(dp(116),dp(43)))'
+          if old in s: s=s.replace(old,new,1)
+          # Deleting a tournament also removes its linked match bookings.
+          old='db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
+          new='db.writableDatabase.delete("bookings","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("tournament_teams","tournament_id=?",arrayOf(id.toString()));'
+          if old in s: s=s.replace(old,new,1)
+          # Calculate a real league table from recorded scores instead of showing only a score list.
+          start=s.find(' private fun showTournamentStats(id:Long)')
+          end=s.find('\n private fun playersPage()',start)
+          assert start>=0 and end>start, 'tournament statistics function not found'
+          replacement=''' private fun showTournamentStats(id:Long){
+          val fixtures=db.fixtures(id).filter{it.homeScore>=0&&it.awayScore>=0}
+          val table=linkedMapOf<String,MutableList<Int>>()
+          db.tournamentTeams(id).forEach{table[it.name]=mutableListOf(0,0,0,0,0,0,0)}
+          fixtures.forEach{f->
+           val h=table.getOrPut(f.home){mutableListOf(0,0,0,0,0,0,0)}
+           val a=table.getOrPut(f.away){mutableListOf(0,0,0,0,0,0,0)}
+           h[0]++;a[0]++;h[4]+=f.homeScore;h[5]+=f.awayScore;a[4]+=f.awayScore;a[5]+=f.homeScore
+           when{f.homeScore>f.awayScore->{h[1]++;a[3]++;h[6]+=3};f.homeScore<f.awayScore->{a[1]++;h[3]++;a[6]+=3};else->{h[2]++;a[2]++;h[6]++;a[6]++}}
+          }
+          val lines=table.entries.sortedWith(compareByDescending<Map.Entry<String,MutableList<Int>>>{it.value[6]}.thenByDescending{it.value[4]-it.value[5]}.thenByDescending{it.value[4]}).mapIndexed{index,e->
+           val v=e.value
+           "${index+1}. ${e.key} • لعب ${v[0]} • فاز ${v[1]} • تعادل ${v[2]} • خسر ${v[3]} • له ${v[4]} • عليه ${v[5]} • نقاط ${v[6]}"
+          }
+          AlertDialog.Builder(this).setTitle("ترتيب البطولة").setMessage(lines.joinToString("\\n").ifBlank{"لا توجد نتائج مسجلة بعد"}).setPositiveButton("حسناً",null).show()
+         }'''
+          s=s[:start]+replacement+s[end:]
+          open(p,'w',encoding='utf-8').write(s)
+          PY
+          grep -q 'hourRange(h:Int)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'ترتيب البطولة' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'bookings","tournament_id' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           grep -q 'setPadding(dp(14),dp(8),dp(14),dp(8))' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           sed -i 's/versionCode = 1/versionCode = 3/; s/versionName = "1.0"/versionName = "1.2.0"/' project/app/build.gradle.kts
           cp -a project/. .
