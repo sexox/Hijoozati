@@ -86,6 +86,10 @@ jobs:
           if 'private fun showTournamentBookings(id:Long)' not in s:
               assert anchor in s, 'tournament stats anchor missing'
               s=s.replace(anchor,method+anchor,1)
+          # Regenerating a tournament draw must remove its old linked bookings too.
+          old='db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));createDraw(id,teams)'
+          new='db.writableDatabase.delete("bookings","tournament_id=?",arrayOf(id.toString()));db.writableDatabase.delete("fixtures","tournament_id=?",arrayOf(id.toString()));createDraw(id,teams)'
+          if old in s: s=s.replace(old,new,1)
           # Generate a full round-robin group stage for the groups tournament type.
           old='}else{val pool=teams.map{it.name}.toMutableList();if(pool.size%2==1)pool.add("تأهل تلقائي");for(i in 0 until pool.size/2){if(pool[i]!="تأهل تلقائي"&&pool[pool.lastIndex-i]!="تأهل تلقائي")db.addFixture(id,pool[i],pool[pool.lastIndex-i],"الدور الأول")}};showFixtures(id)}'
           new='}else if(t.type=="مجموعات ثم خروج المغلوب"){for(i in teams.indices)for(j in i+1 until teams.size)db.addFixture(id,teams[i].name,teams[j].name,"دور المجموعات")}else{val pool=teams.map{it.name}.toMutableList();if(pool.size%2==1)pool.add("تأهل تلقائي");for(i in 0 until pool.size/2){if(pool[i]!="تأهل تلقائي"&&pool[pool.lastIndex-i]!="تأهل تلقائي")db.addFixture(id,pool[i],pool[pool.lastIndex-i],"الدور الأول")}};showFixtures(id)}'
