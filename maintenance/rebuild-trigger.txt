@@ -1,1 +1,1 @@
-Trigger rebuild after correcting workflow source transformation.
+Build Hijoozati 1.2.0 with corrected 3 PM–11 PM start slots and visible in-app version label.
