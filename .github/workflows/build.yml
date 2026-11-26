@@ -36,11 +36,11 @@ jobs:
           python3 - <<'PY'
           p='project/app/src/main/java/com/hijoozati/app/MainActivity.kt'
           s=open(p,encoding='utf-8').read()
-          marker=' private fun bookingPage(){'
-          footer='  gap(12);content.addView(txt("حجوزاتي • الإصدار 1.2.0",10f,Palette.muted).apply{gravity=Gravity.CENTER})\n }\n private fun bookingPage(){'
+          marker=' }\n private fun bookingPage(){'
+          replacement='  gap(12);content.addView(txt("حجوزاتي • الإصدار 1.2.0",10f,Palette.muted).apply{gravity=Gravity.CENTER})\n }\n private fun bookingPage(){'
           if 'حجوزاتي • الإصدار 1.2.0' not in s:
               assert marker in s
-              s=s.replace(marker,footer,1)
+              s=s.replace(marker,replacement,1)
           open(p,'w',encoding='utf-8').write(s)
           PY
           grep -q 'حجوزاتي • الإصدار 1.2.0' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
