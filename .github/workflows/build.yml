@@ -24,24 +24,21 @@ jobs:
           java-version: '17'
       - name: Extract Project and Install Updated App Source
         run: |
+          set -euo pipefail
           test -f Hijoozati_Project.zip
           mkdir project
           unzip -q Hijoozati_Project.zip -d project
           test -f project/settings.gradle.kts
           mkdir -p project/app/src/main/java/com/hijoozati/app
           base64 -d maintenance/MainActivity.kt.gz.b64 | gzip -dc > project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i '/fun bookingsFor(/s/else it.hour})$/else it.hour}}/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i '/fun fixedBookings(/s/else it.hour}}$/else it.hour})/' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           test -s project/app/src/main/java/com/hijoozati/app/MainActivity.kt
           python3 maintenance/patch.py
-          grep -q 'hourRange(h:Int)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'ترتيب البطولة' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'bookings","tournament_id' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'عرض التقويم الشهري' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'showTournamentBookings(id:Long)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'hourRange(h:Int)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          grep -q 'setPadding(dp(14),dp(8),dp(14),dp(8))' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
-          sed -i 's/versionCode = [0-9][0-9]*/versionCode = 6/; s/versionName = "[^"]*"/versionName = "1.5.0"/' project/app/build.gradle.kts
+          grep -q 'advanceTournament(id:Long)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'tournament_groups' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'playerBelongsToFixture' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          grep -q 'private fun hour(h:Int)' project/app/src/main/java/com/hijoozati/app/MainActivity.kt
+          if grep -q 'hourRange' project/app/src/main/java/com/hijoozati/app/MainActivity.kt; then echo 'Unexpected booking time range formatter'; exit 1; fi
+          sed -i 's/versionCode = [0-9][0-9]*/versionCode = 7/; s/versionName = "[^"]*"/versionName = "1.6.0"/' project/app/build.gradle.kts
           cp -a project/. .
       - name: Upload Extracted Project Source
         uses: actions/upload-artifact@v4
@@ -49,7 +46,7 @@ jobs:
           name: Hijoozati-Source
           path: project/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
